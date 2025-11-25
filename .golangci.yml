@@ -1,0 +1,238 @@
+version: "2"
+
+# !!! USE LATEST RELEASE OF GOLANGCI-LINT (2.6.2) !!!
+
+run:
+  relative-path-mode: gomod
+  timeout: 3m
+  allow-parallel-runners: true
+
+linters:
+  disable-all: true
+  enable:
+    - staticcheck
+    - unused
+    - govet            # go vet
+    - revive           # Современная замена golint TODO: внедрить позже, очень много фиксов
+    - errcheck
+    - ineffassign
+    - noctx
+    - errname
+    - errorlint
+    - containedctx
+    #    - forcetypeassert # fixme: надо ли
+    - nilerr
+    - nilnil
+    - nilnesserr
+    - contextcheck
+    # - wrapcheck        # Проверка обертки ошибок (отключен: слишком много ошибок, требует рефакторинга)
+    - bodyclose
+    - sqlclosecheck
+    - loggercheck
+    - iotamixing # version >= 2.5.0
+    - inamedparam
+    - makezero
+    - misspell
+    - musttag
+    - modernize # version >= 2.6.0 очень круто позволяет использовать актуальные подходы
+    - importas
+    #    - interfacebloat # может ограничивать количество методов в интерфейсе
+    #    - ireturn # возвращать конкретный тип, а не интерфейс + var _ Doer = (*IDoer)(nil)
+    - canonicalheader
+    - tparallel
+    - decorder
+    - embeddedstructfieldcheck
+    #    - testpackage
+    - thelper
+    - durationcheck
+    - testifylint
+    - testableexamples
+    - gosec
+    - dupl
+    - cyclop           # Цикломатическая сложность
+    - gocognit         # Когнитивная сложность
+    #    - funlen
+    #    - maintidx         # Индекс поддерживаемости (отключено: НЕЯВНЫЕ ТРЕБОВАНИЯ)
+    - nestif
+    - wsl_v5
+    - prealloc
+    - perfsprint
+    - goprintffuncname
+    - mirror
+    - intrange
+    - copyloopvar
+    - iface
+    - nosprintfhostport
+    - goconst
+    - tagliatelle
+    - forbidigo
+    - gochecknoglobals
+    - gochecknoinits
+    - asasalint
+    - dogsled
+    - bidichk
+    - gomodguard
+    - mnd
+    - nakedret
+    #    - nolintlint       # Линтинг nolint
+    - promlinter
+    - reassign
+    - unconvert
+    - unparam
+    - funcorder
+    - exptostd
+    - fatcontext
+    - usestdlibvars
+    - usetesting
+    - recvcheck
+    - wastedassign
+
+  # ---------------------------------------------------- EXCLUSIONS ----------------------------------------------------
+  exclusions:
+    generated: lax
+    # [https://golangci-lint.run/docs/linters/false-positives/]
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules: # один из примеров использования:
+      # - path: /
+      #  text: "cognitive complexity"
+      #  отключает все ошибки с текстом "cognitive complexity"
+      #  можно добавить опцию
+      #  linters:
+      #    - gocognit
+      - path: /
+        text: "ALL_CAPS"
+        linters:
+          - revive
+      - path: /
+        text: "URL"
+        linters:
+          - revive
+      - path: /
+        text: "ID"
+        linters:
+          - revive
+      - path: /
+        text: "_id"
+        linters:
+          - tagliatelle
+    paths:
+      - .*_test.go
+      - third_party$
+      - builtin$
+      - examples$
+
+  # ----------------------------------------------------- SETTINGS -----------------------------------------------------
+  settings:
+    dupl:
+      threshold: 100
+    cyclop:
+      max-complexity: 15
+      package-average: 12
+    govet:
+      enable-all: true
+      disable:
+        - shadow # FIXME: опционально
+    tagliatelle:
+      case:
+        rules:
+          # TODO: согласовать единый вид
+          yaml: camel
+          json: snake
+          bson: snake
+          xml: pascal
+        ignored-fields:
+          - ID
+    mnd:
+      checks:
+        - argument
+        - case
+        - condition
+        - operation
+        - return
+      ignored-numbers:
+        - "0"
+        - "1"
+        - "2"
+        - "3"
+        - "4"
+        - "5"
+        - "10"
+        - "16"
+        - "24"
+        - "32"
+        - "60"
+        - "64"
+        - "100"
+        - "128"
+        - "200"
+        - "256"
+        - "400"
+        - "401"
+        - "403"
+        - "404"
+        - "409"
+        - "500"
+        - "512"
+        - "1000"
+        - "1024"
+        - "2048"
+        - "4096"
+        - "8192"
+      ignored-functions:
+        - "time.Sleep"
+        - "strconv.FormatInt"
+        - "strconv.FormatUint"
+        - "strconv.Itoa"
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  # It's not practical to fix all existing issues at the moment of integration:
+  # much better don't allow issues in new code.
+  # [https://golangci-lint.run/docs/configuration/file/#run-configuration]
+  new: false # позволяет проверять только unstaged changes
+  fix: false # auto-fix, отключено, так как даже авто фикс должен быть под присмотром человека
+
+# ----------------------------------------------------- FORMATTERS -----------------------------------------------------
+formatters:
+  enable:
+    - gofumpt
+    - golines
+    - gci
+  settings:
+    gofmt: # Apply the rewrite rules to the source before reformatting.
+      # https://pkg.go.dev/cmd/gofmt
+      # Default: []
+      rewrite-rules:
+        - pattern: 'interface{}'
+          replacement: 'any'
+        - pattern: 'a[b:len(a)]'
+          replacement: 'a[b:]'
+    gofumpt:
+      extra-rules: true # добавляет автофикс paramTypeCombine
+    golines:
+      max-len: 120
+      tab-len: 1
+      reformat-tags: false
+      shorten-comments: false
+  exclusions:
+    generated: lax
+    paths:
+      - vendor/
+      - ".*/vendor/.*"
+      - "vendor/.*"
+      - third_party/
+      - ".*/third_party/.*"
+      - docs/
+
+# ------------------------------------------------------ SEVERITY ------------------------------------------------------
+severity: # can be used for sonar integration maybe
+  default: error
+  rules:
+    - linters:
+        - dupl
+      severity: info
