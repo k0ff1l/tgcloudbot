@@ -25,15 +25,15 @@ type User struct {
 // Message represents a Telegram message
 // https://core.telegram.org/bots/api#message
 type Message struct {
-	MessageID int64       `json:"message_id"`
-	From      *User       `json:"from,omitempty"`
-	Chat      Chat        `json:"chat"`
-	Date      int64       `json:"date"`
+	Photo     []PhotoSize `json:"photo,omitempty"`
 	Text      string      `json:"text,omitempty"`
+	Chat      Chat        `json:"chat"`
+	MessageID int64       `json:"message_id"`
+	Date      int64       `json:"date"`
+	From      *User       `json:"from,omitempty"`
 	Document  *Document   `json:"document,omitempty"`
 	Audio     *Audio      `json:"audio,omitempty"`
 	Video     *Video      `json:"video,omitempty"`
-	Photo     []PhotoSize `json:"photo,omitempty"`
 }
 
 // Document represents a general file
@@ -51,12 +51,12 @@ type Document struct {
 type Audio struct {
 	FileID       string `json:"file_id"`
 	FileUniqueID string `json:"file_unique_id"`
-	Duration     int    `json:"duration,omitempty"`
 	Performer    string `json:"performer,omitempty"`
 	Title        string `json:"title,omitempty"`
 	FileName     string `json:"file_name,omitempty"`
 	MimeType     string `json:"mime_type,omitempty"`
 	FileSize     int64  `json:"file_size,omitempty"`
+	Duration     int    `json:"duration,omitempty"`
 }
 
 // Video represents a video file
@@ -64,12 +64,12 @@ type Audio struct {
 type Video struct {
 	FileID       string `json:"file_id"`
 	FileUniqueID string `json:"file_unique_id"`
-	Width        int    `json:"width"`
-	Height       int    `json:"height"`
-	Duration     int    `json:"duration,omitempty"`
 	FileName     string `json:"file_name,omitempty"`
 	MimeType     string `json:"mime_type,omitempty"`
 	FileSize     int64  `json:"file_size,omitempty"`
+	Width        int    `json:"width"`
+	Height       int    `json:"height"`
+	Duration     int    `json:"duration,omitempty"`
 }
 
 // PhotoSize represents one size of a photo
@@ -77,9 +77,9 @@ type Video struct {
 type PhotoSize struct {
 	FileID       string `json:"file_id"`
 	FileUniqueID string `json:"file_unique_id"`
+	FileSize     int64  `json:"file_size,omitempty"`
 	Width        int    `json:"width"`
 	Height       int    `json:"height"`
-	FileSize     int64  `json:"file_size,omitempty"`
 }
 
 // File represents a file ready to be downloaded
@@ -87,18 +87,18 @@ type PhotoSize struct {
 type File struct {
 	FileID       string `json:"file_id"`
 	FileUniqueID string `json:"file_unique_id"`
-	FileSize     int64  `json:"file_size,omitempty"`
 	FilePath     string `json:"file_path,omitempty"`
+	FileSize     int64  `json:"file_size,omitempty"`
 }
 
 // Response represents a generic Telegram API response
 // https://core.telegram.org/bots/api#making-requests
 type Response struct {
-	OK          bool                `json:"ok"`
-	Result      *Message            `json:"result,omitempty"`
 	Description string              `json:"description,omitempty"`
-	ErrorCode   int                 `json:"error_code,omitempty"`
+	Result      *Message            `json:"result,omitempty"`
 	Parameters  *ResponseParameters `json:"parameters,omitempty"`
+	ErrorCode   int                 `json:"error_code,omitempty"`
+	OK          bool                `json:"ok"`
 }
 
 // ResponseParameters represents parameters for error handling
@@ -126,11 +126,11 @@ type SendDocumentRequest struct {
 // SendAudioRequest represents parameters for sendAudio method
 type SendAudioRequest struct {
 	ChatID              string `json:"chat_id"`
-	Audio               string `json:"audio"` // file_id or URL
+	Audio               string `json:"audio"`
 	Caption             string `json:"caption,omitempty"`
 	ParseMode           string `json:"parse_mode,omitempty"`
-	Duration            int    `json:"duration,omitempty"`
 	Performer           string `json:"performer,omitempty"`
 	Title               string `json:"title,omitempty"`
+	Duration            int    `json:"duration,omitempty"`
 	DisableNotification bool   `json:"disable_notification,omitempty"`
 }
