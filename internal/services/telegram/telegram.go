@@ -14,7 +14,11 @@ import (
 )
 
 const (
-	maxFileSize = 50 * 1024 * 1024 // 50 MB - максимальный размер файла для Telegram
+	maxFileSize  = 50 * 1024 * 1024 // 50 MB - максимальный размер файла для Telegram
+	sendDocument = "sendDocument"
+	sendAudio    = "sendAudio"
+	sendPhoto    = "sendPhoto"
+	sendVideo    = "sendVideo"
 )
 
 var _ Client = (*Bot)(nil)
@@ -182,19 +186,19 @@ func (b *Bot) SendMessage(chatID, text string) (*Message, error) {
 }
 
 func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile("sendDocument", "document", chatID, filePath, caption)
+	return b.sendMultipartFile(sendDocument, "document", chatID, filePath, caption)
 }
 
 func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile("sendAudio", "audio", chatID, filePath, caption)
+	return b.sendMultipartFile(sendAudio, "audio", chatID, filePath, caption)
 }
 
 func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile("sendPhoto", "photo", chatID, filePath, caption)
+	return b.sendMultipartFile(sendPhoto, "photo", chatID, filePath, caption)
 }
 
 func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile("sendVideo", "video", chatID, filePath, caption)
+	return b.sendMultipartFile(sendVideo, "video", chatID, filePath, caption)
 }
 
 func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
