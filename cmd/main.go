@@ -15,14 +15,6 @@ import (
 func main() {
 	cfg := config.New()
 
-	if cfg.BotToken == "" {
-		log.Fatal("TELEGRAM_BOT_TOKEN environment variable is required")
-	}
-
-	if cfg.ChatID == "" {
-		log.Fatal("TELEGRAM_CHAT_ID environment variable is required")
-	}
-
 	bot := telegram.NewBot(cfg.APIURL, cfg.BotToken)
 	watcher := file.NewWatcher()
 	syncService := sync.NewSyncService(bot, watcher, cfg.ChatID)

@@ -16,7 +16,7 @@ const (
 	maxFileSize = 50 * 1024 * 1024 // 50 MB - максимальный размер файла для Telegram
 )
 
-var _ Client = (*IBot)(nil)
+var _ Client = (*Bot)(nil)
 
 // Client interface defines methods for interacting with Telegram API
 // https://core.telegram.org/bots/api#available-methods
@@ -43,16 +43,16 @@ type Client interface {
 	GetFileInfo(fileID string) (*File, error)
 }
 
-// IBot implements Client interface using HTTP requests to Telegram API
-type IBot struct {
+// Bot implements Client interface using HTTP requests to Telegram API
+type Bot struct {
 	client   *http.Client
 	apiURL   string
 	botToken string
 }
 
 // NewBot creates a new Telegram bot instance
-func NewBot(apiURL, botToken string) *IBot {
-	return &IBot{
+func NewBot(apiURL, botToken string) *Bot {
+	return &Bot{
 		apiURL:   apiURL,
 		botToken: botToken,
 		client:   &http.Client{},
@@ -61,7 +61,7 @@ func NewBot(apiURL, botToken string) *IBot {
 
 // SendMessage sends a text message to the specified chat
 // https://core.telegram.org/bots/api#sendmessage
-func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
+func (b *Bot) SendMessage(chatID, text string) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -116,7 +116,7 @@ func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
 
 // SendDocument sends a document (file) to the specified chat
 // https://core.telegram.org/bots/api#senddocument
-func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) {
+func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -219,7 +219,7 @@ func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) 
 
 // SendAudio sends an audio file to the specified chat
 // https://core.telegram.org/bots/api#sendaudio
-func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
+func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -321,7 +321,7 @@ func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 
 // SendPhoto sends a photo to the specified chat
 // https://core.telegram.org/bots/api#sendphoto
-func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
+func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -422,7 +422,7 @@ func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 
 // SendVideo sends a video file to the specified chat
 // https://core.telegram.org/bots/api#sendvideo
-func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
+func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -522,7 +522,7 @@ func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 }
 
 // UploadFile uploads a file from multipart.FileHeader to Telegram
-func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
+func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
 	if chatID == "" {
 		return nil, errors.New("chatID cannot be empty")
 	}
@@ -611,7 +611,7 @@ func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mes
 
 // GetFileInfo retrieves information about a file by its file_id
 // https://core.telegram.org/bots/api#getfile
-func (b *IBot) GetFileInfo(fileID string) (*File, error) {
+func (b *Bot) GetFileInfo(fileID string) (*File, error) {
 	if fileID == "" {
 		return nil, errors.New("fileID cannot be empty")
 	}

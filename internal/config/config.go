@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"strings"
 	"time"
@@ -16,13 +17,13 @@ type Config struct {
 
 const (
 	defaultAPIURL   = "https://api.telegram.org/bot"
-	defaultInterval = 5 * time.Second
+	defaultInterval = 1 * time.Second
 )
 
 func New() *Config {
 	cfg := &Config{
-		BotToken:     os.Getenv("TELEGRAM_BOT_TOKEN"),
-		ChatID:       os.Getenv("TELEGRAM_CHAT_ID"),
+		BotToken:     mustGetEnv("TELEGRAM_BOT_TOKEN"),
+		ChatID:       mustGetEnv("TELEGRAM_CHAT_ID"),
 		APIURL:       defaultAPIURL,
 		SyncInterval: defaultInterval,
 	}
@@ -41,15 +42,15 @@ func New() *Config {
 		}
 	}
 
-	// Parse sync interval from environment variable (in seconds)
-	if intervalStr := os.Getenv("TELEGRAM_SYNC_INTERVAL"); intervalStr != "" {
-		if interval, err := time.ParseDuration(intervalStr); err == nil {
-			cfg.SyncInterval = interval
-		}
+	return cfg
+}
+
+func mustGetEnv(key string) string {
+	var val string
+
+	if val = os.Getenv(key); val == "" {
+		panic(fmt.Sprintf("environment variable `%s` not set", key))
 	}
 
-	// TODO: YAML config parse
-	// TODO: godotenv parse for credentials (sensitive information)
-
-	return cfg
+	return val
 }
