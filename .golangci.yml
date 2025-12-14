@@ -7,86 +7,89 @@ run:
   timeout: 3m
   allow-parallel-runners: true
 
+  # ----------------------------------------------------- LINTERS ------------------------------------------------------
 linters:
+  # [https://golangci-lint.run/docs/linters/]
   disable-all: true
   enable:
-    - staticcheck
-    - unused
-    - govet            # go vet
-    - revive           # Современная замена golint TODO: внедрить позже, очень много фиксов
-    - errcheck
-    - ineffassign
-    - noctx
-    - errname
-    - errorlint
-    - containedctx
-    #    - forcetypeassert # fixme: надо ли
-    - nilerr
-    - nilnil
-    - nilnesserr
-    - contextcheck
-    # - wrapcheck        # Проверка обертки ошибок (отключен: слишком много ошибок, требует рефакторинга)
-    - bodyclose
-    - sqlclosecheck
-    - loggercheck
-    - iotamixing # version >= 2.5.0
-    - inamedparam
-    - makezero
-    - misspell
-    - musttag
-    - modernize # version >= 2.6.0 очень круто позволяет использовать актуальные подходы
-    - importas
-    #    - interfacebloat # может ограничивать количество методов в интерфейсе
-    #    - ireturn # возвращать конкретный тип, а не интерфейс + var _ Doer = (*IDoer)(nil)
-    - canonicalheader
-    - tparallel
-    - decorder
-    - embeddedstructfieldcheck
-    #    - testpackage
-    - thelper
-    - durationcheck
-    - testifylint
-    - testableexamples
-    - gosec
-    - dupl
-    - cyclop           # Цикломатическая сложность
-    - gocognit         # Когнитивная сложность
-    #    - funlen
-    #    - maintidx         # Индекс поддерживаемости (отключено: НЕЯВНЫЕ ТРЕБОВАНИЯ)
-    - nestif
-    - wsl_v5
-    - prealloc
-    - perfsprint
-    - goprintffuncname
-    - mirror
-    - intrange
-    - copyloopvar
-    - iface
-    - nosprintfhostport
-    - goconst
-    - tagliatelle
-    - forbidigo
-    - gochecknoglobals
-    - gochecknoinits
-    - asasalint
-    - dogsled
-    - bidichk
-    - gomodguard
-    - mnd
-    - nakedret
-    #    - nolintlint       # Линтинг nolint
-    - promlinter
-    - reassign
-    - unconvert
-    - unparam
-    - funcorder
-    - exptostd
-    - fatcontext
-    - usestdlibvars
-    - usetesting
-    - recvcheck
-    - wastedassign
-
+    - staticcheck # находит баги и проблемы производительности
+    - unused # находит неиспользуемый код
+    - govet # официальный инструмент Go для поиска подозрительных конструкций
+    - revive # стилистические проверки кода
+    - errcheck # проверяет обработку всех ошибок
+    - ineffassign # находит неэффективные присваивания
+    - noctx # проверяет передачу context в http.Request
+    - errname # проверяет именование переменных ошибок
+    - errorlint # проверяет правильную работу с wrapping/unwrapping ошибок
+    - containedctx # запрещает хранить context в структурах
+    - forcetypeassert # требует проверки type assertion
+    - nilerr # находит возврат nil вместо ошибки
+    - nilnil # запрещает одновременный возврат nil, nil
+    - nilnesserr # проверяет сравнение ошибок с nil
+    - contextcheck # проверяет правильную передачу context
+    - rowserrcheck # проверяет закрытие sql.Rows
+    - gocritic # мета-линтер с множеством проверок
+    - bodyclose # проверяет закрытие http.Response.Body
+    - sqlclosecheck # проверяет закрытие sql rows/statements
+    - loggercheck # проверяет правильное использование логгеров
+    - iotamixing # предотвращает смешивание iota с другими значениями
+    - inamedparam # проверяет именование параметров в интерфейсах
+    - makezero # находит некорректное использование make с append
+    - musttag # требует теги для структур (json, yaml и т.д.)
+    - modernize # заставляет использовать актуальные подходы
+    - importas # проверяет алиасы импортов
+    - canonicalheader # проверяет канонические заголовки HTTP
+    - tparallel # проверяет правильное использование t.Parallel()
+    - decorder # проверяет порядок объявлений в коде
+    - embeddedstructfieldcheck # находит проблемы с embedded полями
+    - thelper # проверяет правильное использование t.Helper()
+    - durationcheck # проверяет умножение time.Duration
+    - testifylint # улучшения для библиотеки testify
+    - testableexamples # проверяет корректность Example функций
+    - gosec # проверка безопасности кода
+    - dupl # находит дублирование кода
+    - cyclop # проверяет цикломатическую сложность
+    - gocognit # проверяет когнитивную сложность
+    - nestif # проверяет глубину вложенности if
+    - wsl_v5 # проверяет пустые строки и форматирование
+    - prealloc # рекомендует преаллокацию слайсов
+    - perfsprint # оптимизация Sprint*/Sprintf
+    - goprintffuncname # проверяет именование функций с Printf
+    - mirror # находит зеркальные импорты
+    - intrange # проверяет использование range для int
+    - copyloopvar # предотвращает проблемы с захватом переменных цикла
+    - iface # находит неиспользуемые интерфейсы
+    - nosprintfhostport # запрещает sprintf для host:port
+    - goconst # находит повторяющиеся строки для вынесения в константы
+    - tagliatelle # проверяет стиль тегов структур
+    - forbidigo # запрещает определенные вызовы функций
+    - gochecknoglobals # запрещает глобальные переменные
+    - gochecknoinits # запрещает init функции
+    - asasalint # проверяет pass by value vs pointer
+    - dogsled # находит множественные пустые идентификаторы (_)
+    - bidichk # проверяет опасные unicode символы
+    - gomodguard # контролирует разрешенные зависимости
+    - mnd # находит magic numbers
+    - nakedret # запрещает голые return в длинных функциях
+    - promlinter # проверяет метрики Prometheus
+    - reassign # находит переприсваивание переменных
+    - unconvert # находит ненужные конвертации типов
+    - unparam # находит неиспользуемые параметры функций
+    - funcorder # проверяет порядок функций
+    - exptostd # рекомендует stdlib вместо экспериментальных пакетов
+    - fatcontext # находит вложенные context с Value
+    - usestdlibvars # рекомендует константы из stdlib
+    - usetesting # рекомендует использовать testing.TB
+    - recvcheck # проверяет консистентность receiver в методах
+    - wastedassign # находит бесполезные присваивания
+    #    - misspell  # отключен: автофикс ломает код (меняет названия переменных и т.д.)
+    #    - wrapcheck # очень много рефачить
+    #    - interfacebloat # ограничивает количество методов в интерфейсе
+    #    - ireturn # возвращать конкретный тип, а не интерфейс + var _ Doer = (*IDoer)(nil) // TODO: использовать
+    #    - testpackage # для тестов отдельный package *_test
+    #    - funlen # ограничение длины функций
+    #    - maintidx # индекс поддерживаемости функций
+    #    - nolintlint # поиск //nolint: и удаление
   # ---------------------------------------------------- EXCLUSIONS ----------------------------------------------------
   exclusions:
     generated: lax
@@ -120,7 +123,6 @@ linters:
         linters:
           - tagliatelle
     paths:
-      - .*_test.go
       - third_party$
       - builtin$
       - examples$
@@ -134,13 +136,11 @@ linters:
       package-average: 12
     govet:
       enable-all: true
-      disable:
-        - shadow # FIXME: опционально
     tagliatelle:
       case:
         rules:
           # TODO: согласовать единый вид
-          yaml: camel
+          yaml: snake
           json: snake
           bson: snake
           xml: pascal
@@ -204,14 +204,6 @@ formatters:
     - golines
     - gci
   settings:
-    gofmt: # Apply the rewrite rules to the source before reformatting.
-      # https://pkg.go.dev/cmd/gofmt
-      # Default: []
-      rewrite-rules:
-        - pattern: 'interface{}'
-          replacement: 'any'
-        - pattern: 'a[b:len(a)]'
-          replacement: 'a[b:]'
     gofumpt:
       extra-rules: true # добавляет автофикс paramTypeCombine
     golines:
@@ -228,11 +220,3 @@ formatters:
       - third_party/
       - ".*/third_party/.*"
       - docs/
-
-# ------------------------------------------------------ SEVERITY ------------------------------------------------------
-severity: # can be used for sonar integration maybe
-  default: error
-  rules:
-    - linters:
-        - dupl
-      severity: info
