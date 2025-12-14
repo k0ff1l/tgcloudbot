@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -25,12 +26,12 @@ type Service struct {
 }
 
 // NewSyncService creates a new sync service instance
-func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *Service {
+func NewSyncService(bot telegram.Client, fw file.Watcher, chatID string) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	return &Service{
 		bot:         bot,
-		fileWatcher: watcher,
+		fileWatcher: fw,
 		chatID:      chatID,
 		ctx:         ctx,
 		cancel:      cancel,
@@ -107,7 +108,7 @@ func (s *Service) SyncDirectory(dirPath string) error {
 
 		if err := s.SyncFile(filePath); err != nil {
 			// Log error but continue with other files
-			fmt.Printf("Error syncing file %s: %v\n", filePath, err)
+			log.Printf("Error syncing file %s: %v\n", filePath, err)
 			continue
 		}
 	}
@@ -137,23 +138,34 @@ func (s *Service) StartContinuousSync(dirPath string, interval time.Duration) er
 
 		// Initial sync
 		if err := s.syncDirectoryOnce(); err != nil {
-			fmt.Printf("Error in initial sync for %s: %v\n", dirPath, err)
+			log.Printf("Error in initial sync for %s: %v\n", dirPath, err)
 		}
 
 		for {
 			select {
 			case <-s.ctx.Done():
-				fmt.Printf("Stopping continuous sync for %s\n", dirPath)
+				log.Printf("Stopping continuous sync for %s\n", dirPath)
 				return
 			case <-ticker.C:
 				if err := s.syncDirectoryOnce(); err != nil {
-					fmt.Printf("Error syncing directory %s: %v\n", dirPath, err)
+					log.Printf("Error syncing directory %s: %v\n", dirPath, err)
 				}
 			}
 		}
 	})
 
 	return nil
+}
+
+// Stop stops all continuous sync operations
+func (s *Service) Stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.cancel != nil {
+		s.cancel()
+		s.wg.Wait()
+	}
 }
 
 // syncDirectoryOnce performs a single sync operation for a directory
@@ -180,21 +192,10 @@ func (s *Service) syncDirectoryOnce() error {
 
 		if err := s.SyncFile(filePath); err != nil {
 			// Log error but continue with other files
-			fmt.Printf("Error syncing file %s: %v\n", filePath, err)
+			log.Printf("Error syncing file %s: %v\n", filePath, err)
 			continue
 		}
 	}
 
 	return nil
-}
-
-// Stop stops all continuous sync operations
-func (s *Service) Stop() {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.cancel != nil {
-		s.cancel()
-		s.wg.Wait()
-	}
 }

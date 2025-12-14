@@ -88,9 +88,7 @@ func (b *Bot) SendMessage(chatID, text string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log but don't fail on close error
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -131,9 +129,7 @@ func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			// Log but don't fail on close error
-		}
+		_ = file.Close()
 	}()
 
 	fileInfo, err := file.Stat()
@@ -191,9 +187,7 @@ func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-			// Log but don't fail on close error
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -234,9 +228,7 @@ func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-			// Log but don't fail on close error
-		}
+		_ = file.Close()
 	}()
 
 	fileInfo, err := file.Stat()
@@ -294,8 +286,7 @@ func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -336,8 +327,7 @@ func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	fileInfo, err := file.Stat()
@@ -395,8 +385,7 @@ func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -437,8 +426,7 @@ func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	fileInfo, err := file.Stat()
@@ -496,8 +484,7 @@ func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -537,8 +524,7 @@ func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mess
 	}
 
 	defer func() {
-		if closeErr := file.Close(); closeErr != nil {
-		}
+		_ = file.Close()
 	}()
 
 	if fileHeader.Size > maxFileSize {
@@ -584,8 +570,7 @@ func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mess
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
@@ -624,8 +609,7 @@ func (b *Bot) GetFileInfo(fileID string) (*File, error) {
 	}
 
 	defer func() {
-		if closeErr := resp.Body.Close(); closeErr != nil {
-		}
+		_ = resp.Body.Close()
 	}()
 
 	if resp.StatusCode != http.StatusOK {
