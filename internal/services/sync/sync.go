@@ -13,8 +13,8 @@ import (
 	"github.com/k0ff1l/tgcloudbot/internal/services/telegram"
 )
 
-// SyncService handles file synchronization between local filesystem and Telegram
-type SyncService struct {
+// Service handles file synchronization between local filesystem and Telegram
+type Service struct {
 	bot         telegram.Client
 	fileWatcher file.Watcher
 	ctx         context.Context
@@ -25,10 +25,10 @@ type SyncService struct {
 }
 
 // NewSyncService creates a new sync service instance
-func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *SyncService {
+func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *Service {
 	ctx, cancel := context.WithCancel(context.Background())
 
-	return &SyncService{
+	return &Service{
 		bot:         bot,
 		fileWatcher: watcher,
 		chatID:      chatID,
@@ -38,7 +38,7 @@ func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *S
 }
 
 // SyncFile uploads a single file to Telegram
-func (s *SyncService) SyncFile(filePath string) error {
+func (s *Service) SyncFile(filePath string) error {
 	if filePath == "" {
 		return errors.New("filePath cannot be empty")
 	}
@@ -80,7 +80,7 @@ func (s *SyncService) SyncFile(filePath string) error {
 }
 
 // SyncDirectory watches a directory and syncs new/updated files
-func (s *SyncService) SyncDirectory(dirPath string) error {
+func (s *Service) SyncDirectory(dirPath string) error {
 	if dirPath == "" {
 		return errors.New("dirPath cannot be empty")
 	}
@@ -117,7 +117,7 @@ func (s *SyncService) SyncDirectory(dirPath string) error {
 
 // StartContinuousSync starts continuous synchronization in background
 // It periodically checks for file changes and syncs them
-func (s *SyncService) StartContinuousSync(dirPath string, interval time.Duration) error {
+func (s *Service) StartContinuousSync(dirPath string, interval time.Duration) error {
 	if dirPath == "" {
 		return errors.New("dirPath cannot be empty")
 	}
@@ -157,7 +157,7 @@ func (s *SyncService) StartContinuousSync(dirPath string, interval time.Duration
 }
 
 // syncDirectoryOnce performs a single sync operation for a directory
-func (s *SyncService) syncDirectoryOnce() error {
+func (s *Service) syncDirectoryOnce() error {
 	files, err := s.fileWatcher.GetUpdatedFiles()
 	if err != nil {
 		return fmt.Errorf("failed to get updated files: %w", err)
@@ -189,7 +189,7 @@ func (s *SyncService) syncDirectoryOnce() error {
 }
 
 // Stop stops all continuous sync operations
-func (s *SyncService) Stop() {
+func (s *Service) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
