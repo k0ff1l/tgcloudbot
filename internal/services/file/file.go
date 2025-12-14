@@ -8,6 +8,8 @@ import (
 	"time"
 )
 
+// TODO: implement filter names (.txt, .swp, ...) from config.go regexp
+
 // limitations : 20 MB per or 50 MB
 
 var _ Watcher = (*IWatcher)(nil)

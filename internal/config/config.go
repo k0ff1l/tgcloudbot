@@ -13,6 +13,7 @@ type Config struct {
 	APIURL       string
 	WatchDirs    []string
 	SyncInterval time.Duration
+	// TODO: regexp whitelist/blacklist
 }
 
 const (
