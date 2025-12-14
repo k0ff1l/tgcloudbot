@@ -3,37 +3,37 @@ package telegram
 // Chat represents a Telegram chat
 // https://core.telegram.org/bots/api#chat
 type Chat struct {
-	ID        int64  `json:"id"`
 	Type      string `json:"type"`
 	Title     string `json:"title,omitempty"`
 	Username  string `json:"username,omitempty"`
 	FirstName string `json:"first_name,omitempty"`
 	LastName  string `json:"last_name,omitempty"`
+	ID        int64  `json:"id"`
 }
 
 // User represents a Telegram user
 // https://core.telegram.org/bots/api#user
 type User struct {
-	ID           int64  `json:"id"`
-	IsBot        bool   `json:"is_bot"`
 	FirstName    string `json:"first_name"`
 	LastName     string `json:"last_name,omitempty"`
 	Username     string `json:"username,omitempty"`
 	LanguageCode string `json:"language_code,omitempty"`
+	ID           int64  `json:"id"`
+	IsBot        bool   `json:"is_bot"`
 }
 
 // Message represents a Telegram message
 // https://core.telegram.org/bots/api#message
 type Message struct {
-	Photo     []PhotoSize `json:"photo,omitempty"`
-	Text      string      `json:"text,omitempty"`
-	Chat      Chat        `json:"chat"`
-	MessageID int64       `json:"message_id"`
-	Date      int64       `json:"date"`
-	From      *User       `json:"from,omitempty"`
-	Document  *Document   `json:"document,omitempty"`
-	Audio     *Audio      `json:"audio,omitempty"`
-	Video     *Video      `json:"video,omitempty"`
+	Text      string       `json:"text,omitempty"`
+	Chat      *Chat        `json:"chat"`
+	From      *User        `json:"from,omitempty"`
+	Document  *Document    `json:"document,omitempty"`
+	Audio     *Audio       `json:"audio,omitempty"`
+	Video     *Video       `json:"video,omitempty"`
+	Photo     []*PhotoSize `json:"photo,omitempty"`
+	Date      int64        `json:"date"`
+	MessageID int64        `json:"message_id"`
 }
 
 // Document represents a general file
@@ -94,9 +94,9 @@ type File struct {
 // Response represents a generic Telegram API response
 // https://core.telegram.org/bots/api#making-requests
 type Response struct {
-	Description string              `json:"description,omitempty"`
 	Result      *Message            `json:"result,omitempty"`
 	Parameters  *ResponseParameters `json:"parameters,omitempty"`
+	Description string              `json:"description,omitempty"`
 	ErrorCode   int                 `json:"error_code,omitempty"`
 	OK          bool                `json:"ok"`
 }
