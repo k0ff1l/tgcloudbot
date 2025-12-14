@@ -19,10 +19,10 @@ type Watcher interface {
 }
 
 type watchedFile struct {
-	path     string
 	modTime  time.Time
-	size     int64
 	lastSync time.Time
+	path     string
+	size     int64
 }
 
 type IWatcher struct {
@@ -57,11 +57,13 @@ func (w *IWatcher) AddDir(path string) error {
 	if err != nil {
 		return fmt.Errorf("failed to stat directory: %w", err)
 	}
+
 	if !info.IsDir() {
 		return fmt.Errorf("path is not a directory: %s", path)
 	}
 
 	w.watchedDirs[path] = true
+
 	return nil
 }
 
@@ -100,6 +102,7 @@ func (w *IWatcher) GetUpdatedFiles() ([]string, error) {
 				watched.modTime = info.ModTime()
 				watched.size = info.Size()
 				watched.lastSync = time.Now()
+
 				updatedFiles = append(updatedFiles, filePath)
 			}
 		}

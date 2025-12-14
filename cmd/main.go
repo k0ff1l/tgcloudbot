@@ -38,6 +38,7 @@ func main() {
 	// Start continuous sync for configured directories
 	if len(cfg.WatchDirs) > 0 {
 		log.Printf("Starting continuous sync for %d directory(ies)...\n", len(cfg.WatchDirs))
+
 		for _, dirPath := range cfg.WatchDirs {
 			if err := syncService.StartContinuousSync(dirPath, cfg.SyncInterval); err != nil {
 				log.Printf("Failed to start continuous sync for %s: %v\n", dirPath, err)

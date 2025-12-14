@@ -2,6 +2,7 @@ package sync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strings"
@@ -16,16 +17,17 @@ import (
 type SyncService struct {
 	bot         telegram.Client
 	fileWatcher file.Watcher
-	chatID      string
-	mu          sync.RWMutex
 	ctx         context.Context
 	cancel      context.CancelFunc
+	chatID      string
 	wg          sync.WaitGroup
+	mu          sync.RWMutex
 }
 
 // NewSyncService creates a new sync service instance
 func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *SyncService {
 	ctx, cancel := context.WithCancel(context.Background())
+
 	return &SyncService{
 		bot:         bot,
 		fileWatcher: watcher,
@@ -38,14 +40,14 @@ func NewSyncService(bot telegram.Client, watcher file.Watcher, chatID string) *S
 // SyncFile uploads a single file to Telegram
 func (s *SyncService) SyncFile(filePath string) error {
 	if filePath == "" {
-		return fmt.Errorf("filePath cannot be empty")
+		return errors.New("filePath cannot be empty")
 	}
 
 	// Determine file type and send accordingly
 	ext := strings.ToLower(filepath.Ext(filePath))
 
 	// TODO: delete - remove caption generation
-	caption := fmt.Sprintf("File: %s", filepath.Base(filePath))
+	caption := "File: " + filepath.Base(filePath)
 
 	switch ext {
 	case ".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".opus":
@@ -80,7 +82,7 @@ func (s *SyncService) SyncFile(filePath string) error {
 // SyncDirectory watches a directory and syncs new/updated files
 func (s *SyncService) SyncDirectory(dirPath string) error {
 	if dirPath == "" {
-		return fmt.Errorf("dirPath cannot be empty")
+		return errors.New("dirPath cannot be empty")
 	}
 
 	// Add directory to watcher
@@ -95,7 +97,7 @@ func (s *SyncService) SyncDirectory(dirPath string) error {
 	}
 
 	if files == nil {
-		return fmt.Errorf("fileWatcher returned nil files list")
+		return errors.New("fileWatcher returned nil files list")
 	}
 
 	for _, filePath := range files {
@@ -117,8 +119,9 @@ func (s *SyncService) SyncDirectory(dirPath string) error {
 // It periodically checks for file changes and syncs them
 func (s *SyncService) StartContinuousSync(dirPath string, interval time.Duration) error {
 	if dirPath == "" {
-		return fmt.Errorf("dirPath cannot be empty")
+		return errors.New("dirPath cannot be empty")
 	}
+
 	if interval <= 0 {
 		interval = 5 * time.Second
 	}
@@ -128,9 +131,7 @@ func (s *SyncService) StartContinuousSync(dirPath string, interval time.Duration
 		return fmt.Errorf("failed to add directory to watcher: %w", err)
 	}
 
-	s.wg.Add(1)
-	go func() {
-		defer s.wg.Done()
+	s.wg.Go(func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
@@ -150,7 +151,7 @@ func (s *SyncService) StartContinuousSync(dirPath string, interval time.Duration
 				}
 			}
 		}
-	}()
+	})
 
 	return nil
 }

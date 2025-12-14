@@ -31,6 +31,7 @@ func New() *Config {
 	watchDirsEnv := os.Getenv("TELEGRAM_WATCH_DIRS")
 	if watchDirsEnv != "" {
 		dirs := strings.Split(watchDirsEnv, ",")
+
 		cfg.WatchDirs = make([]string, 0, len(dirs))
 		for _, dir := range dirs {
 			trimmed := strings.TrimSpace(dir)

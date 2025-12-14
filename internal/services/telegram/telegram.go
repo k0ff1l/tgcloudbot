@@ -3,6 +3,7 @@ package telegram
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -24,16 +25,16 @@ type Client interface {
 	SendMessage(chatID, text string) (*Message, error)
 
 	// SendDocument sends a document (file) to a chat
-	SendDocument(chatID, filePath string, caption string) (*Message, error)
+	SendDocument(chatID, filePath, caption string) (*Message, error)
 
 	// SendAudio sends an audio file to a chat
-	SendAudio(chatID, filePath string, caption string) (*Message, error)
+	SendAudio(chatID, filePath, caption string) (*Message, error)
 
 	// SendPhoto sends a photo to a chat
-	SendPhoto(chatID, filePath string, caption string) (*Message, error)
+	SendPhoto(chatID, filePath, caption string) (*Message, error)
 
 	// SendVideo sends a video file to a chat
-	SendVideo(chatID, filePath string, caption string) (*Message, error)
+	SendVideo(chatID, filePath, caption string) (*Message, error)
 
 	// UploadFile uploads a file using multipart form data
 	UploadFile(chatID string, file *multipart.FileHeader) (*Message, error)
@@ -44,9 +45,9 @@ type Client interface {
 
 // IBot implements Client interface using HTTP requests to Telegram API
 type IBot struct {
+	client   *http.Client
 	apiURL   string
 	botToken string
-	client   *http.Client
 }
 
 // NewBot creates a new Telegram bot instance
@@ -62,10 +63,11 @@ func NewBot(apiURL, botToken string) *IBot {
 // https://core.telegram.org/bots/api#sendmessage
 func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if text == "" {
-		return nil, fmt.Errorf("text cannot be empty")
+		return nil, errors.New("text cannot be empty")
 	}
 
 	req := SendMessageRequest{
@@ -84,6 +86,7 @@ func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			// Log but don't fail on close error
@@ -105,7 +108,7 @@ func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -115,16 +118,18 @@ func (b *IBot) SendMessage(chatID, text string) (*Message, error) {
 // https://core.telegram.org/bots/api#senddocument
 func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if filePath == "" {
-		return nil, fmt.Errorf("filePath cannot be empty")
+		return nil, errors.New("filePath cannot be empty")
 	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 			// Log but don't fail on close error
@@ -142,6 +147,7 @@ func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) 
 
 	// Create multipart form
 	var requestBody bytes.Buffer
+
 	writer := multipart.NewWriter(&requestBody)
 
 	// Add chat_id
@@ -172,16 +178,18 @@ func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) 
 
 	url := fmt.Sprintf("%s%s/sendDocument", b.apiURL, b.botToken)
 
-	req, err := http.NewRequest("POST", url, &requestBody)
+	req, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 			// Log but don't fail on close error
@@ -203,7 +211,7 @@ func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) 
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -213,16 +221,18 @@ func (b *IBot) SendDocument(chatID, filePath, caption string) (*Message, error) 
 // https://core.telegram.org/bots/api#sendaudio
 func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if filePath == "" {
-		return nil, fmt.Errorf("filePath cannot be empty")
+		return nil, errors.New("filePath cannot be empty")
 	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 			// Log but don't fail on close error
@@ -240,6 +250,7 @@ func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 
 	// Create multipart form
 	var requestBody bytes.Buffer
+
 	writer := multipart.NewWriter(&requestBody)
 
 	// Add chat_id
@@ -270,16 +281,18 @@ func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 
 	url := fmt.Sprintf("%s%s/sendAudio", b.apiURL, b.botToken)
 
-	req, err := http.NewRequest("POST", url, &requestBody)
+	req, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 		}
@@ -300,7 +313,7 @@ func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -310,16 +323,18 @@ func (b *IBot) SendAudio(chatID, filePath, caption string) (*Message, error) {
 // https://core.telegram.org/bots/api#sendphoto
 func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if filePath == "" {
-		return nil, fmt.Errorf("filePath cannot be empty")
+		return nil, errors.New("filePath cannot be empty")
 	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 		}
@@ -336,6 +351,7 @@ func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 
 	// Create multipart form
 	var requestBody bytes.Buffer
+
 	writer := multipart.NewWriter(&requestBody)
 
 	// Add chat_id
@@ -366,16 +382,18 @@ func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 
 	url := fmt.Sprintf("%s%s/sendPhoto", b.apiURL, b.botToken)
 
-	req, err := http.NewRequest("POST", url, &requestBody)
+	req, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 		}
@@ -396,7 +414,7 @@ func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -406,16 +424,18 @@ func (b *IBot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
 // https://core.telegram.org/bots/api#sendvideo
 func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if filePath == "" {
-		return nil, fmt.Errorf("filePath cannot be empty")
+		return nil, errors.New("filePath cannot be empty")
 	}
 
 	file, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 		}
@@ -432,6 +452,7 @@ func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 
 	// Create multipart form
 	var requestBody bytes.Buffer
+
 	writer := multipart.NewWriter(&requestBody)
 
 	// Add chat_id
@@ -462,16 +483,18 @@ func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 
 	url := fmt.Sprintf("%s%s/sendVideo", b.apiURL, b.botToken)
 
-	req, err := http.NewRequest("POST", url, &requestBody)
+	req, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 		}
@@ -492,7 +515,7 @@ func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -501,16 +524,18 @@ func (b *IBot) SendVideo(chatID, filePath, caption string) (*Message, error) {
 // UploadFile uploads a file from multipart.FileHeader to Telegram
 func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
 	if chatID == "" {
-		return nil, fmt.Errorf("chatID cannot be empty")
+		return nil, errors.New("chatID cannot be empty")
 	}
+
 	if fileHeader == nil {
-		return nil, fmt.Errorf("fileHeader is nil")
+		return nil, errors.New("fileHeader is nil")
 	}
 
 	file, err := fileHeader.Open()
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
+
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
 		}
@@ -522,6 +547,7 @@ func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mes
 
 	// Create multipart form
 	var requestBody bytes.Buffer
+
 	writer := multipart.NewWriter(&requestBody)
 
 	// Add chat_id
@@ -545,16 +571,18 @@ func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mes
 
 	url := fmt.Sprintf("%s%s/sendDocument", b.apiURL, b.botToken)
 
-	req, err := http.NewRequest("POST", url, &requestBody)
+	req, err := http.NewRequest(http.MethodPost, url, &requestBody)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	resp, err := b.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 		}
@@ -575,7 +603,7 @@ func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mes
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
@@ -585,7 +613,7 @@ func (b *IBot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Mes
 // https://core.telegram.org/bots/api#getfile
 func (b *IBot) GetFileInfo(fileID string) (*File, error) {
 	if fileID == "" {
-		return nil, fmt.Errorf("fileID cannot be empty")
+		return nil, errors.New("fileID cannot be empty")
 	}
 
 	url := fmt.Sprintf("%s%s/getFile?file_id=%s", b.apiURL, b.botToken, fileID)
@@ -594,6 +622,7 @@ func (b *IBot) GetFileInfo(fileID string) (*File, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to send request: %w", err)
 	}
+
 	defer func() {
 		if closeErr := resp.Body.Close(); closeErr != nil {
 		}
@@ -605,10 +634,10 @@ func (b *IBot) GetFileInfo(fileID string) (*File, error) {
 	}
 
 	var tgResp struct {
-		OK          bool   `json:"ok"`
 		Result      *File  `json:"result,omitempty"`
 		Description string `json:"description,omitempty"`
 		ErrorCode   int    `json:"error_code,omitempty"`
+		OK          bool   `json:"ok"`
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
@@ -620,7 +649,7 @@ func (b *IBot) GetFileInfo(fileID string) (*File, error) {
 	}
 
 	if tgResp.Result == nil {
-		return nil, fmt.Errorf("telegram API returned OK but result is nil")
+		return nil, errors.New("telegram API returned OK but result is nil")
 	}
 
 	return tgResp.Result, nil
