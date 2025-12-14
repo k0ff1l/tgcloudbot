@@ -44,6 +44,7 @@ func (s *SyncService) SyncFile(filePath string) error {
 	// Determine file type and send accordingly
 	ext := strings.ToLower(filepath.Ext(filePath))
 
+	// TODO: delete - remove caption generation
 	caption := fmt.Sprintf("File: %s", filepath.Base(filePath))
 
 	switch ext {
