@@ -64,6 +64,126 @@ func NewBot(apiURL, botToken string) *Bot {
 	}
 }
 
+func (b *Bot) SendMessage(chatID, text string) (*Message, error) {
+	if chatID == "" {
+		return nil, errors.New("chatID cannot be empty")
+	}
+
+	if text == "" {
+		return nil, errors.New("text cannot be empty")
+	}
+
+	req := SendMessageRequest{ChatID: chatID, Text: text}
+
+	return b.doJSONRequest("sendMessage", req)
+}
+
+func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
+	return b.sendMultipartFile(sendDocument, "document", chatID, filePath, caption)
+}
+
+func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
+	return b.sendMultipartFile(sendAudio, "audio", chatID, filePath, caption)
+}
+
+func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
+	return b.sendMultipartFile(sendPhoto, "photo", chatID, filePath, caption)
+}
+
+func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
+	return b.sendMultipartFile(sendVideo, "video", chatID, filePath, caption)
+}
+
+func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
+	if chatID == "" {
+		return nil, errors.New("chatID cannot be empty")
+	}
+
+	if fileHeader == nil {
+		return nil, errors.New("fileHeader is nil")
+	}
+
+	src, err := fileHeader.Open()
+	if err != nil {
+		return nil, fmt.Errorf("open file failed: %w", err)
+	}
+	defer safeClose(src)
+
+	if fileHeader.Size > maxFileSize {
+		return nil, fmt.Errorf("file size %d exceeds limit %d", fileHeader.Size, maxFileSize)
+	}
+
+	var body bytes.Buffer
+
+	writer := multipart.NewWriter(&body)
+	if err = writer.WriteField("chat_id", chatID); err != nil {
+		return nil, fmt.Errorf("write chat_id failed: %w", err)
+	}
+
+	part, err := writer.CreateFormFile("document", fileHeader.Filename)
+	if err != nil {
+		return nil, fmt.Errorf("create form file failed: %w", err)
+	}
+
+	if _, err = io.Copy(part, src); err != nil {
+		return nil, fmt.Errorf("copy file failed: %w", err)
+	}
+
+	if err = writer.Close(); err != nil {
+		return nil, fmt.Errorf("close writer failed: %w", err)
+	}
+
+	url := fmt.Sprintf("%s%s/sendDocument", b.apiURL, b.botToken)
+
+	req, err := http.NewRequest(http.MethodPost, url, &body)
+	if err != nil {
+		return nil, fmt.Errorf("create request failed: %w", err)
+	}
+
+	req.Header.Set("Content-Type", writer.FormDataContentType())
+
+	return b.doRequest(req)
+}
+
+func (b *Bot) GetFileInfo(fileID string) (*File, error) {
+	if fileID == "" {
+		return nil, errors.New("fileID cannot be empty")
+	}
+
+	url := fmt.Sprintf("%s%s/getFile?file_id=%s", b.apiURL, b.botToken, fileID)
+
+	resp, err := b.client.Get(url)
+	if err != nil {
+		return nil, fmt.Errorf("send request failed: %w", err)
+	}
+	defer safeClose(resp.Body)
+
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("unexpected HTTP status %d: %s", resp.StatusCode, string(body))
+	}
+
+	var tgResp struct {
+		Result      *File  `json:"result,omitempty"`
+		Description string `json:"description,omitempty"`
+		ErrorCode   int    `json:"error_code,omitempty"`
+		OK          bool   `json:"ok"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
+		return nil, fmt.Errorf("decode response failed: %w", err)
+	}
+
+	if !tgResp.OK {
+		return nil, fmt.Errorf("telegram error %d: %s", tgResp.ErrorCode, tgResp.Description)
+	}
+
+	if tgResp.Result == nil {
+		return nil, errors.New("telegram API returned OK but result is nil")
+	}
+
+	return tgResp.Result, nil
+}
+
 func safeClose(c io.Closer) {
 	if c == nil {
 		return
@@ -152,12 +272,12 @@ func (b *Bot) sendMultipartFile(method, fieldName, chatID, filePath, caption str
 	var body bytes.Buffer
 
 	writer := multipart.NewWriter(&body)
-	if err := writer.WriteField("chat_id", chatID); err != nil {
+	if err = writer.WriteField("chat_id", chatID); err != nil {
 		return nil, fmt.Errorf("write chat_id failed: %w", err)
 	}
 
 	if caption != "" {
-		if err := writer.WriteField("caption", caption); err != nil {
+		if err = writer.WriteField("caption", caption); err != nil {
 			return nil, fmt.Errorf("write caption failed: %w", err)
 		}
 	}
@@ -167,11 +287,11 @@ func (b *Bot) sendMultipartFile(method, fieldName, chatID, filePath, caption str
 		return nil, fmt.Errorf("create form file failed: %w", err)
 	}
 
-	if _, err := io.Copy(part, file); err != nil {
+	if _, err = io.Copy(part, file); err != nil {
 		return nil, fmt.Errorf("copy file failed: %w", err)
 	}
 
-	if err := writer.Close(); err != nil {
+	if err = writer.Close(); err != nil {
 		return nil, fmt.Errorf("close writer failed: %w", err)
 	}
 
@@ -185,124 +305,4 @@ func (b *Bot) sendMultipartFile(method, fieldName, chatID, filePath, caption str
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	return b.doRequest(req)
-}
-
-func (b *Bot) SendMessage(chatID, text string) (*Message, error) {
-	if chatID == "" {
-		return nil, errors.New("chatID cannot be empty")
-	}
-
-	if text == "" {
-		return nil, errors.New("text cannot be empty")
-	}
-
-	req := SendMessageRequest{ChatID: chatID, Text: text}
-
-	return b.doJSONRequest("sendMessage", req)
-}
-
-func (b *Bot) SendDocument(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile(sendDocument, "document", chatID, filePath, caption)
-}
-
-func (b *Bot) SendAudio(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile(sendAudio, "audio", chatID, filePath, caption)
-}
-
-func (b *Bot) SendPhoto(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile(sendPhoto, "photo", chatID, filePath, caption)
-}
-
-func (b *Bot) SendVideo(chatID, filePath, caption string) (*Message, error) {
-	return b.sendMultipartFile(sendVideo, "video", chatID, filePath, caption)
-}
-
-func (b *Bot) UploadFile(chatID string, fileHeader *multipart.FileHeader) (*Message, error) {
-	if chatID == "" {
-		return nil, errors.New("chatID cannot be empty")
-	}
-
-	if fileHeader == nil {
-		return nil, errors.New("fileHeader is nil")
-	}
-
-	src, err := fileHeader.Open()
-	if err != nil {
-		return nil, fmt.Errorf("open file failed: %w", err)
-	}
-	defer safeClose(src)
-
-	if fileHeader.Size > maxFileSize {
-		return nil, fmt.Errorf("file size %d exceeds limit %d", fileHeader.Size, maxFileSize)
-	}
-
-	var body bytes.Buffer
-
-	writer := multipart.NewWriter(&body)
-	if err := writer.WriteField("chat_id", chatID); err != nil {
-		return nil, fmt.Errorf("write chat_id failed: %w", err)
-	}
-
-	part, err := writer.CreateFormFile("document", fileHeader.Filename)
-	if err != nil {
-		return nil, fmt.Errorf("create form file failed: %w", err)
-	}
-
-	if _, err := io.Copy(part, src); err != nil {
-		return nil, fmt.Errorf("copy file failed: %w", err)
-	}
-
-	if err := writer.Close(); err != nil {
-		return nil, fmt.Errorf("close writer failed: %w", err)
-	}
-
-	url := fmt.Sprintf("%s%s/sendDocument", b.apiURL, b.botToken)
-
-	req, err := http.NewRequest(http.MethodPost, url, &body)
-	if err != nil {
-		return nil, fmt.Errorf("create request failed: %w", err)
-	}
-
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-
-	return b.doRequest(req)
-}
-
-func (b *Bot) GetFileInfo(fileID string) (*File, error) {
-	if fileID == "" {
-		return nil, errors.New("fileID cannot be empty")
-	}
-
-	url := fmt.Sprintf("%s%s/getFile?file_id=%s", b.apiURL, b.botToken, fileID)
-
-	resp, err := b.client.Get(url)
-	if err != nil {
-		return nil, fmt.Errorf("send request failed: %w", err)
-	}
-	defer safeClose(resp.Body)
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("unexpected HTTP status %d: %s", resp.StatusCode, string(body))
-	}
-
-	var tgResp struct {
-		Result      *File  `json:"result,omitempty"`
-		Description string `json:"description,omitempty"`
-		ErrorCode   int    `json:"error_code,omitempty"`
-		OK          bool   `json:"ok"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&tgResp); err != nil {
-		return nil, fmt.Errorf("decode response failed: %w", err)
-	}
-
-	if !tgResp.OK {
-		return nil, fmt.Errorf("telegram error %d: %s", tgResp.ErrorCode, tgResp.Description)
-	}
-
-	if tgResp.Result == nil {
-		return nil, errors.New("telegram API returned OK but result is nil")
-	}
-
-	return tgResp.Result, nil
 }
