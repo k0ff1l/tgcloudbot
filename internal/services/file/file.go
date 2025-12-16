@@ -2,8 +2,10 @@ package file
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sync"
 	"time"
 )
@@ -28,17 +30,21 @@ type watchedFile struct {
 }
 
 type IWatcher struct {
-	fileUpdates  chan string
-	watchedDirs  map[string]bool
-	watchedFiles map[string]*watchedFile
-	mu           sync.RWMutex
+	fileUpdates     chan string
+	watchedDirs     map[string]bool
+	watchedFiles    map[string]*watchedFile
+	whitelistRegexp []*regexp.Regexp
+	blacklistRegexp []*regexp.Regexp
+	mu              sync.RWMutex
 }
 
-func NewWatcher() *IWatcher {
+func NewWatcher(whitelistRegexp, blacklistRegexp []*regexp.Regexp) *IWatcher {
 	return &IWatcher{
-		fileUpdates:  make(chan string, 100),
-		watchedDirs:  make(map[string]bool),
-		watchedFiles: make(map[string]*watchedFile),
+		fileUpdates:     make(chan string, 100),
+		watchedDirs:     make(map[string]bool),
+		watchedFiles:    make(map[string]*watchedFile),
+		whitelistRegexp: whitelistRegexp,
+		blacklistRegexp: blacklistRegexp,
 	}
 }
 
@@ -88,6 +94,10 @@ func (w *IWatcher) GetUpdatedFiles() ([]string, error) {
 				continue // Skip files that can't be stat'd
 			}
 
+			if w.isBlacklisted(filePath) || !w.isWhitelisted(filePath) {
+				continue
+			}
+
 			// Check if file is new or modified
 			watched, exists := w.watchedFiles[filePath]
 			if !exists {
@@ -119,6 +129,7 @@ func (w *IWatcher) scanDirectory(dirPath string) ([]string, error) {
 
 	err := filepath.Walk(dirPath, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
+			// TODO: inspect
 			return nil // Skip files/dirs that can't be accessed
 		}
 
@@ -130,6 +141,41 @@ func (w *IWatcher) scanDirectory(dirPath string) ([]string, error) {
 	})
 
 	return files, err
+}
+
+func (w *IWatcher) isBlacklisted(filePath string) bool {
+	blacklistMatched := false
+
+	for _, re := range w.blacklistRegexp {
+		bytePath := []byte(filePath)
+
+		if re.Match(bytePath) {
+			blacklistMatched = re.Match(bytePath)
+			break
+		}
+	}
+
+	if blacklistMatched {
+		log.Printf("blacklist matched: skipping file %s", filePath)
+	}
+
+	return blacklistMatched
+}
+
+func (w *IWatcher) isWhitelisted(filePath string) bool {
+	whitelistMatched := true
+
+	for _, re := range w.whitelistRegexp {
+		bytePath := []byte(filePath)
+
+		whitelistMatched = whitelistMatched && re.Match(bytePath)
+	}
+
+	if !whitelistMatched {
+		log.Printf("whitelist not matched: skipping file %s", filePath)
+	}
+
+	return whitelistMatched
 }
 
 func (w *IWatcher) watchFile(filePath string) error {

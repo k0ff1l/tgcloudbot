@@ -2,18 +2,21 @@ package config
 
 import (
 	"fmt"
+	"log"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 )
 
 type Config struct {
-	BotToken     string
-	ChatID       string
-	APIURL       string
-	WatchDirs    []string
-	SyncInterval time.Duration
-	// TODO: regexp whitelist/blacklist
+	BotToken        string
+	ChatID          string
+	APIURL          string
+	WatchDirs       []string
+	WhitelistRegexp []*regexp.Regexp
+	BlacklistRegexp []*regexp.Regexp
+	SyncInterval    time.Duration
 }
 
 const (
@@ -30,20 +33,49 @@ func New() *Config {
 	}
 
 	// Parse watch directories from environment variable (comma-separated)
-	watchDirsEnv := os.Getenv("TELEGRAM_WATCH_DIRS")
-	if watchDirsEnv != "" {
-		dirs := strings.Split(watchDirsEnv, ",")
+	cfg.WatchDirs = getStringsSlice(os.Getenv("TELEGRAM_WATCH_DIRS"))
+	whitelist := getStringsSlice(os.Getenv("WHITELIST_REGEXP"))
 
-		cfg.WatchDirs = make([]string, 0, len(dirs))
-		for _, dir := range dirs {
-			trimmed := strings.TrimSpace(dir)
-			if trimmed != "" {
-				cfg.WatchDirs = append(cfg.WatchDirs, trimmed)
-			}
+	cfg.WhitelistRegexp = make([]*regexp.Regexp, 0, len(whitelist))
+
+	for _, regString := range whitelist {
+		regex, err := regexp.Compile(regString)
+		if err != nil {
+			log.Printf("Failed to compile regexp '%s': %v", regString, err)
 		}
+
+		cfg.WhitelistRegexp = append(cfg.WhitelistRegexp, regex)
+	}
+
+	blacklist := getStringsSlice(os.Getenv("BLACKLIST_REGEXP"))
+
+	cfg.BlacklistRegexp = make([]*regexp.Regexp, 0, len(blacklist))
+
+	for _, regString := range blacklist {
+		regex, err := regexp.Compile(regString)
+		if err != nil {
+			log.Printf("Failed to compile regexp '%s': %v", regString, err)
+		}
+
+		cfg.BlacklistRegexp = append(cfg.BlacklistRegexp, regex)
 	}
 
 	return cfg
+}
+
+func getStringsSlice(val string) []string {
+	slice := strings.Split(val, ",")
+
+	result := make([]string, 0, len(slice))
+
+	for _, str := range slice {
+		str = strings.TrimSpace(str)
+		if str != "" {
+			result = append(result, str)
+		}
+	}
+
+	return result
 }
 
 func mustGetEnv(key string) string {

@@ -16,7 +16,7 @@ func main() {
 	cfg := config.New()
 
 	bot := telegram.NewBot(cfg.APIURL, cfg.BotToken)
-	watcher := file.NewWatcher()
+	watcher := file.NewWatcher(cfg.WhitelistRegexp, cfg.BlacklistRegexp)
 	syncService := sync.NewSyncService(bot, watcher, cfg.ChatID)
 
 	// Send startup notification

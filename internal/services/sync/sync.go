@@ -18,7 +18,7 @@ import (
 type Service struct {
 	bot         telegram.Client
 	fileWatcher file.Watcher
-	ctx         context.Context
+	ctx         context.Context //nolint:containedctx
 	cancel      context.CancelFunc
 	chatID      string
 	wg          sync.WaitGroup
